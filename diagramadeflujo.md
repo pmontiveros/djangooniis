@@ -1,6 +1,6 @@
 # Diagrama de Flujo
 * Mostrando cómo fluye la petición desde el navegador hasta Django, incluyendo IIS, ARR/Rewrite y LDAP.
-
+```
 +-----------------+
 |   Navegador     |
 |  (usuario)      |
@@ -38,7 +38,7 @@
 |    Directory    |
 |  (Windows AD)   |
 +-----------------+
-
+```
 🔹 Explicación
 
 Navegador → IIS:
