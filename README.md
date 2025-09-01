@@ -72,29 +72,33 @@
   Dale a Add... y agrega:
   
     HTTP_X_FORWARDED_FOR
+  
     HTTP_X_FORWARDED_PROTO
 
 ⚡ Alternativa rápida con PowerShell
 Import-Module WebAdministration
 
-# Agregar HTTP_X_FORWARDED_FOR
-Add-WebConfigurationProperty `
-   -pspath 'MACHINE/WEBROOT/APPHOST' `
-   -filter "system.webServer/rewrite/allowedServerVariables" `
-   -name "." `
-   -value @{name='HTTP_X_FORWARDED_FOR'}
+* Agregar HTTP_X_FORWARDED_FOR
+```Bash
+  Add-WebConfigurationProperty `
+     -pspath 'MACHINE/WEBROOT/APPHOST' `
+     -filter "system.webServer/rewrite/allowedServerVariables" `
+     -name "." `
+     -value @{name='HTTP_X_FORWARDED_FOR'}
+```
 
-# Agregar HTTP_X_FORWARDED_PROTO
+* Agregar HTTP_X_FORWARDED_PROTO
+```Bash
 Add-WebConfigurationProperty `
    -pspath 'MACHINE/WEBROOT/APPHOST' `
    -filter "system.webServer/rewrite/allowedServerVariables" `
    -name "." `
    -value @{name='HTTP_X_FORWARDED_PROTO'}
-
+```
 * Reiniciar IIS: `iisreset`.
 
 ---
-### ** 6️⃣ Configuración IIS**
+** 6️⃣ Configuración IIS**
 
 1. Crear **sitio** apuntando a `C:\inetpub\pocdashboard`.
 2. Confirmar que **Application Pool** usa `ApplicationPoolIdentity`.
@@ -141,6 +145,15 @@ Add-WebConfigurationProperty `
 
    * Nota: Es web.config es minimo para probar la redirección de IIS
 
+Sí no se ven los archivos estaticos y foramtos CCS agregar
+
+```xml
+        <!-- Excluir /static/ -->
+        <rule name="StaticFiles" stopProcessing="true">
+          <match url="^static/(.*)" />
+          <action type="None" />
+        </rule>
+```
 ---
 
 ### **7️⃣ Pruebas finales**
