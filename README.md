@@ -2,7 +2,7 @@
 
 ### **1️⃣ Preparación del servidor**
 
-* Servidor Windows con IIS instalado.
+* Servidor Windows con IIS instalado. Ver [How to Enable IIS and Key Features on Windows Server: A Step-by-Step Guide](https://techcommunity.microsoft.com/blog/iis-support-blog/how-to-enable-iis-and-key-features-on-windows-server-a-step-by-step-guide/4229883)
 * Conda instalado.
 * Crear ambiente virtual para Django (ej. `djangoiis`).
 
@@ -32,7 +32,7 @@
   > Se elimina django-auth-ldap y se reemplaza por ldap3 puro. Esto permite compatibilidad con Windows y evita dependencias de C++/python-ldap.
 * Confirmar autenticación de usuarios y lectura de grupos/roles desde AD.
 
-  ver https://github.com/pmontiveros/djangooniis/blob/main/python-ldap%20vs%20ldap3.md#python-ldap-vs-ldap3-en-resumen
+  Ver [python-ldap vs ldap3](https://github.com/pmontiveros/djangooniis/blob/main/python-ldap%20vs%20ldap3.md#python-ldap-vs-ldap3-en-resumen)
 
 ---
 
@@ -48,15 +48,31 @@
 * Confirmar que el servicio se inicia y Django responde en `http://localhost:8000/admin`.
 
 ---
+### **5️⃣ Instalación de ARR y habilitación de proxy inverso**
 
-### **5️⃣ Configuración IIS**
+* Descargar e instalar **Application Request Routing (ARR v3)**. Ver [Instalar application-request-routing en Microsoft IIS](https://www.iis.net/downloads/microsoft/application-request-routing)
+* IIS Manager → nodo raíz del servidor → **Application Request Routing Cache → Server Proxy Settings**:
+
+  * `[x] Enable proxy`
+  * `[x] Preserve client IP`
+
+**Nota en plan:**
+
+> URL Rewrite necesita ARR + proxy inverso habilitado para funcionar como reverse proxy. Sin esto, IIS intenta procesar las requests localmente y se generan errores de handler.
+
+* Instalar **URL Rewrite Module** Ver [URL Rewrite] (https://www.iis.net/downloads/microsoft/url-rewrite):
+
+   * Nota: después de instalar URL Rewrite (o cualquier modulo para el caso), **cerrar IIS Manager completamente y volver a abrir** para que aparezca el icono.
+
+* Reiniciar IIS: `iisreset`.
+
+---
+### ** 6️⃣ Configuración IIS**
 
 1. Crear **sitio** apuntando a `C:\inetpub\pocdashboard`.
 2. Confirmar que **Application Pool** usa `ApplicationPoolIdentity`.
-3. Instalar **URL Rewrite Module**:
 
-   * Nota: después de instalar URL Rewrite, **cerrar IIS Manager completamente y volver a abrir** para que aparezca el icono.
-4. Crear `web.config` en raíz del sitio:
+3. Crear `web.config` minimo en raíz del sitio:
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -96,20 +112,7 @@
 </configuration>
 ```
 
----
-
-### **6️⃣ Instalación de ARR y habilitación de proxy inverso**
-
-* Descargar e instalar **Application Request Routing (ARR v3)**.
-* IIS Manager → nodo raíz del servidor → **Application Request Routing Cache → Server Proxy Settings**:
-
-  * `[x] Enable proxy`
-  * `[x] Preserve client IP`
-* Reiniciar IIS: `iisreset`.
-
-**Nota en plan:**
-
-> URL Rewrite necesita ARR + proxy inverso habilitado para funcionar como reverse proxy. Sin esto, IIS intenta procesar las requests localmente y se generan errores de handler.
+   * Nota: Es web.config es minimo para probar la redirección de IIS
 
 ---
 
