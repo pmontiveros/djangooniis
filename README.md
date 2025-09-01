@@ -32,6 +32,8 @@
   > Se elimina django-auth-ldap y se reemplaza por ldap3 puro. Esto permite compatibilidad con Windows y evita dependencias de C++/python-ldap.
 * Confirmar autenticación de usuarios y lectura de grupos/roles desde AD.
 
+  ver https://github.com/pmontiveros/djangooniis/blob/main/python-ldap%20vs%20ldap3.md#python-ldap-vs-ldap3-en-resumen
+
 ---
 
 ### **4️⃣ Configuración para correr Django en Windows como servicio**
