@@ -64,6 +64,33 @@
 
    * Nota: después de instalar URL Rewrite (o cualquier modulo para el caso), **cerrar IIS Manager completamente y volver a abrir** para que aparezca el icono.
 
+* Habilitar variables de URL Rewrite en servidor en IIS
+
+  Abre una consola de Administrador de IIS. 
+  Ve a tu Sitio → URL Rewrite → View Server Variables. 
+  Si no ves la opción, hacé clic en el sitio → Features View → buscá "Server Variables".
+  Dale a Add... y agrega:
+  
+    HTTP_X_FORWARDED_FOR
+    HTTP_X_FORWARDED_PROTO
+
+⚡ Alternativa rápida con PowerShell
+Import-Module WebAdministration
+
+# Agregar HTTP_X_FORWARDED_FOR
+Add-WebConfigurationProperty `
+   -pspath 'MACHINE/WEBROOT/APPHOST' `
+   -filter "system.webServer/rewrite/allowedServerVariables" `
+   -name "." `
+   -value @{name='HTTP_X_FORWARDED_FOR'}
+
+# Agregar HTTP_X_FORWARDED_PROTO
+Add-WebConfigurationProperty `
+   -pspath 'MACHINE/WEBROOT/APPHOST' `
+   -filter "system.webServer/rewrite/allowedServerVariables" `
+   -name "." `
+   -value @{name='HTTP_X_FORWARDED_PROTO'}
+
 * Reiniciar IIS: `iisreset`.
 
 ---
