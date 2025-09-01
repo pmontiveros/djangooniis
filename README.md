@@ -64,16 +64,17 @@
 
    * Nota: después de instalar URL Rewrite (o cualquier modulo para el caso), **cerrar IIS Manager completamente y volver a abrir** para que aparezca el icono.
 
-* Habilitar variables de URL Rewrite en servidor en IIS
+#### Habilitar variables de URL Rewrite en servidor en IIS
 
   Abre una consola de Administrador de IIS. 
   Ve a tu Sitio → URL Rewrite → View Server Variables. 
   Si no ves la opción, hacé clic en el sitio → Features View → buscá "Server Variables".
   Dale a Add... y agrega:
   
+  ```  
     HTTP_X_FORWARDED_FOR
-  
     HTTP_X_FORWARDED_PROTO
+  ```
 
 ⚡ Alternativa rápida con PowerShell
 Import-Module WebAdministration
@@ -95,6 +96,27 @@ Add-WebConfigurationProperty `
    -name "." `
    -value @{name='HTTP_X_FORWARDED_PROTO'}
 ```
+
+#### Feature Delegation
+
+* Abrir IIS Manager
+* Entra en IIS Manager.
+* En el árbol, haz clic en el servidor (nivel raíz), no en el sitio.
+* En el panel central, abre "Feature Delegation" (en español puede figurar como "Delegación de características").
+* Busca "Handler Mappings" en la lista. Si aparece como Read Only → cámbialo a Read/Write. Haz lo mismo con "URL Rewrite", si está bloqueado.
+
+⚡ Alternativa con AppCmd (más directo)
+
+Abre CMD o PowerShell como administrador y ejecuta:
+
+```Bash
+%windir%\system32\inetsrv\appcmd unlock config /section:system.webServer/handlers
+%windir%\system32\inetsrv\appcmd unlock config /section:system.webServer/httpPlatform
+```
+
+Esto desbloquea las secciones para que se puedan configurar en el web.config del sitio.
+
+
 * Reiniciar IIS: `iisreset`.
 
 ---
