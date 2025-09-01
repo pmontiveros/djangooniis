@@ -1,0 +1,138 @@
+## **Plan de laboratorio – Django + IIS + Waitress + LDAP (PoC)**
+
+### **1️⃣ Preparación del servidor**
+
+* Servidor Windows con IIS instalado.
+* Conda instalado.
+* Crear ambiente virtual para Django (ej. `djangoiis`).
+
+---
+
+### **2️⃣ Crear la app Django mínima**
+
+* `django-admin startproject pocdashboard`
+* Configurar `ALLOWED_HOSTS = ['*']` para pruebas locales.
+* Configurar superusuario para dashboard admin.
+* Probar localmente:
+
+  ```bash
+  python manage.py runserver
+  ```
+
+  * Confirmar acceso a `/admin`.
+
+---
+
+### **3️⃣ Integración con Active Directory (LDAP) usando ldap3**
+
+* Decidimos **no usar `django-auth-ldap`** (incompatible con Windows / problemas de compilación).
+* Implementar **backend de autenticación propio** usando `ldap3`.
+* Nota en plan:
+
+  > Se elimina django-auth-ldap y se reemplaza por ldap3 puro. Esto permite compatibilidad con Windows y evita dependencias de C++/python-ldap.
+* Confirmar autenticación de usuarios y lectura de grupos/roles desde AD.
+
+---
+
+### **4️⃣ Configuración para correr Django en Windows como servicio**
+
+* Instalar Waitress (`pip install waitress`).
+* Crear script `runwaitress.py` para ejecutar la app Django en el puerto 8000.
+* Instalar **servicio Windows** con pywin32:
+
+  ```bash
+  python waitress_service.py install
+  ```
+* Confirmar que el servicio se inicia y Django responde en `http://localhost:8000/admin`.
+
+---
+
+### **5️⃣ Configuración IIS**
+
+1. Crear **sitio** apuntando a `C:\inetpub\pocdashboard`.
+2. Confirmar que **Application Pool** usa `ApplicationPoolIdentity`.
+3. Instalar **URL Rewrite Module**:
+
+   * Nota: después de instalar URL Rewrite, **cerrar IIS Manager completamente y volver a abrir** para que aparezca el icono.
+4. Crear `web.config` en raíz del sitio:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+  <system.webServer>
+
+    <!-- URL Rewrite: proxy hacia Waitress en localhost:8000 -->
+    <rewrite>
+      <rules>
+        <rule name="ReverseProxyToDjango" stopProcessing="true">
+          <match url="(.*)" />
+          <action type="Rewrite" url="http://localhost:8000/{R:1}" />
+        </rule>
+      </rules>
+    </rewrite>
+
+    <!-- Handlers: permitir que todas las requests pasen -->
+    <handlers>
+      <clear />
+      <add name="ProxyAll" path="*" verb="*" modules="RewriteModule" resourceType="Unspecified" requireAccess="None" />
+      <add name="StaticFile" path="*" verb="*" modules="StaticFileModule,DefaultDocumentModule,DirectoryListingModule" resourceType="Either" requireAccess="Read" />
+    </handlers>
+
+    <!-- Request Filtering: permitir extensiones desconocidas -->
+    <security>
+      <requestFiltering allowUnlistedFileExtensions="true" />
+    </security>
+
+    <!-- Opcional: mostrar errores detallados -->
+    <httpErrors errorMode="Detailed" />
+    <asp scriptErrorSentToBrowser="true"/>
+
+    <!-- Habilitar proxy para URL Rewrite (solo con ARR) -->
+    <proxy enabled="true" preserveHostHeader="true" />
+
+  </system.webServer>
+</configuration>
+```
+
+---
+
+### **6️⃣ Instalación de ARR y habilitación de proxy inverso**
+
+* Descargar e instalar **Application Request Routing (ARR v3)**.
+* IIS Manager → nodo raíz del servidor → **Application Request Routing Cache → Server Proxy Settings**:
+
+  * `[x] Enable proxy`
+  * `[x] Preserve client IP`
+* Reiniciar IIS: `iisreset`.
+
+**Nota en plan:**
+
+> URL Rewrite necesita ARR + proxy inverso habilitado para funcionar como reverse proxy. Sin esto, IIS intenta procesar las requests localmente y se generan errores de handler.
+
+---
+
+### **7️⃣ Pruebas finales**
+
+* Acceder a `http://localhost:8080/admin` (proxy IIS → Waitress).
+* Confirmar:
+
+  1. El sitio carga sin errores de “handler no configurado”.
+  2. LDAP funciona (login de usuarios y grupos).
+  3. Static/media servidos correctamente si agregás reglas específicas de rewrite para ellos (opcional para PoC).
+
+---
+
+### **Notas de seguridad y buenas prácticas**
+
+1. **Server Variables**:
+
+   * Solo habilitar `HTTP_X_FORWARDED_FOR` y `HTTP_X_FORWARDED_PROTO` si realmente se usan.
+   * No habilitar variables sensibles innecesarias.
+2. **Handlers**:
+
+   * Mantener `<clear />` + wildcard handler (`ProxyAll`) evita conflictos con herencia de `ApplicationHost.config`.
+3. **URL Rewrite**:
+
+   * El icono puede no aparecer hasta reiniciar IIS Manager tras instalación.
+   * ARR debe estar habilitado para que el rewrite funcione como proxy inverso.
+
