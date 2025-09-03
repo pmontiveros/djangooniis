@@ -11,8 +11,10 @@
 ### **2️⃣ Crear la app Django mínima**
 
 * `django-admin startproject pocdashboard`
-* Configurar `ALLOWED_HOSTS = ['*']` para pruebas locales.
-* Configurar superusuario para dashboard admin.
+* Dentro del settings.py
+  * Crear la variable `STATIC_ROOT = BASE_DIR / 'static'` para permitir la ejecucion del comando `python manage.py collectstatic` y crear la carpeta `/static`. 
+  * Configurar `ALLOWED_HOSTS = ['*']` para pruebas locales.
+* Configurar superusuario para dashboard admin. (Comando `python manage.py createsuperuser`)
 * Probar localmente:
 
   ```bash
@@ -60,9 +62,11 @@
 
 > URL Rewrite necesita ARR + proxy inverso habilitado para funcionar como reverse proxy. Sin esto, IIS intenta procesar las requests localmente y se generan errores de handler.
 
-* Instalar **URL Rewrite Module** Ver [URL Rewrite] (https://www.iis.net/downloads/microsoft/url-rewrite):
+* Instalar **URL Rewrite Module** Ver [Instalar url-Rewrite en Microsoft IIS](https://www.iis.net/downloads/microsoft/url-rewrite):
 
    * Nota: después de instalar URL Rewrite (o cualquier modulo para el caso), **cerrar IIS Manager completamente y volver a abrir** para que aparezca el icono.
+  
+ *  Instalar **httpPlatformHandler** [Instalar httpPlatformHandler en Microsof IIS](https://www.iis.net/downloads/microsoft/httpplatformhandler)
 
 #### Habilitar variables de URL Rewrite en servidor en IIS
 
@@ -120,7 +124,7 @@ Esto desbloquea las secciones para que se puedan configurar en el web.config del
 * Reiniciar IIS: `iisreset`.
 
 ---
-** 6️⃣ Configuración IIS**
+### **6️⃣ Configuración IIS**
 
 1. Crear **sitio** apuntando a `C:\inetpub\pocdashboard`.
 2. Confirmar que **Application Pool** usa `ApplicationPoolIdentity`.
@@ -135,6 +139,11 @@ Esto desbloquea las secciones para que se puedan configurar en el web.config del
     <!-- URL Rewrite: proxy hacia Waitress en localhost:8000 -->
     <rewrite>
       <rules>
+        <!-- Excluir /static/ asegurarse que esto coincida con el STATIC_ROOT del setting.py en Django configurado en el segundo paso. -->
+        <rule name="StaticFiles" stopProcessing="true">
+          <match url="^static/(.*)" />
+          <action type="None" />
+        </rule>
         <rule name="ReverseProxyToDjango" stopProcessing="true">
           <match url="(.*)" />
           <action type="Rewrite" url="http://localhost:8000/{R:1}" />
@@ -145,7 +154,6 @@ Esto desbloquea las secciones para que se puedan configurar en el web.config del
     <!-- Handlers: permitir que todas las requests pasen -->
     <handlers>
       <clear />
-      <add name="ProxyAll" path="*" verb="*" modules="RewriteModule" resourceType="Unspecified" requireAccess="None" />
       <add name="StaticFile" path="*" verb="*" modules="StaticFileModule,DefaultDocumentModule,DirectoryListingModule" resourceType="Either" requireAccess="Read" />
     </handlers>
 
@@ -167,15 +175,6 @@ Esto desbloquea las secciones para que se puedan configurar en el web.config del
 
    * Nota: Es web.config es minimo para probar la redirección de IIS
 
-Sí no se ven los archivos estaticos y foramtos CCS agregar
-
-```xml
-        <!-- Excluir /static/ -->
-        <rule name="StaticFiles" stopProcessing="true">
-          <match url="^static/(.*)" />
-          <action type="None" />
-        </rule>
-```
 ---
 
 ### **7️⃣ Pruebas finales**
@@ -197,7 +196,7 @@ Sí no se ven los archivos estaticos y foramtos CCS agregar
    * No habilitar variables sensibles innecesarias.
 2. **Handlers**:
 
-   * Mantener `<clear />` + wildcard handler (`ProxyAll`) evita conflictos con herencia de `ApplicationHost.config`.
+   * Mantener `<clear />` + static handler (`StaticFile`) para asegurar la carga de los archivos estaticos.
 3. **URL Rewrite**:
 
    * El icono puede no aparecer hasta reiniciar IIS Manager tras instalación.
