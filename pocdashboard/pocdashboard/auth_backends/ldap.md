@@ -11,6 +11,41 @@
 Copiár y pegár ldap_backend.py en `pocdashboard/auth_backends/ldap_backend.py` (o la ruta que prefieras).
 Ajustar configuración.
 
+En tu settings.py, asegurate de tener un logger activo, por ejemplo:
+
+```python
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "console": {"class": "logging.StreamHandler"},
+    },
+    "root": {
+        "handlers": ["console"],
+        "level": "DEBUG",  # o INFO en prod
+    },
+}
+```
+
+👉 Con esto, la próxima vez que pruebes un login, deberías ver en consola o en tus logs de Django algo como:
+
+```yaml
+DEBUG LDAP: conectando a ldaps://polab.onmicrosoft.com
+INFO  LDAP: bind exitoso para usuario testuser
+DEBUG LDAP: buscando usuario con filtro (sAMAccountName=testuser)
+```
+
+o bien un error detallado.
+
+Copiár y pegár ldapcheck.py en commands de la app
+
+```markdown
+core/
+ └── management/
+     └── commands/
+         └── ldapcheck.py
+```
+
 ## Ejemplo de configuración a agregar en `settings.py`
 
 ```python
